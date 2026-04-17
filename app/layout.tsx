@@ -4,7 +4,7 @@ import "./globals.css";
 import ThemeProvider from "@/context/Theme";
 import { cn } from "@/lib/utils";
 
-const geist = Geist({subsets:['latin'],variable:'--font-sans'});
+const inter = Inter({subsets:['latin'],variable:'--font-sans'});
 
 const interSans = Inter({
   variable: "--font-inter",
@@ -32,7 +32,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={cn("h-full", "antialiased", interSans.variable, spaceGrotesk.variable, "font-sans", geist.variable)}
+      className={cn("h-full", "antialiased", interSans.variable, spaceGrotesk.variable, "font-sans", inter.variable)}
       suppressHydrationWarning
     >
       <body className="flex min-h-full flex-col">
