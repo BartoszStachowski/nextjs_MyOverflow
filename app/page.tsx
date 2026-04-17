@@ -1,12 +1,14 @@
 import React from "react";
 import Image from "next/image";
+import { Button } from "@/components/ui/button";
 
 const Page = () => {
   return (
     <div>
       <h1 className="h1-bold">HELLO</h1>
-      <h2 className="h1-bold font-space-grotesk">HELLO</h2>
-      <h1>MyOverflow</h1>
+      <h1 className="h1-bold">HELLO</h1>
+      <h1 className="h1-bold">HELLO</h1>
+      <h1 className="h1-bold">HELLO</h1>
     </div>
   );
 };
