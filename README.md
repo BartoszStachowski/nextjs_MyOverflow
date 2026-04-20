@@ -1,7 +1,5 @@
 ## ⚙️ Tech Stack
 
----
-
 - Next.js 16
 - Better Auth
 - TypeScript
@@ -9,7 +7,5 @@
 - Tailwind CSS
 
 ## 🤖 Features
-
----
 
 - **Authentication** with Better Auth (Google, GitHub)
