@@ -11,18 +11,7 @@ const Page = async () => {
 
   console.log(result);
 
-  return (
-    <div>
-      <br />
-      <br />
-      <br />
-      <br />
-      {result && result.user.name}
-      <form action={signOutAction}>
-        <Button type="submit">Sign Out</Button>
-      </form>
-    </div>
-  );
+  return <div>xxx</div>;
 };
 
 export default Page;
