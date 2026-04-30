@@ -14,9 +14,18 @@ import {
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import React from "react";
+import { useRef } from "react";
+import { MDXEditorMethods } from "@mdxeditor/editor";
+import dynamic from "next/dynamic";
+
+const Editor = dynamic(() => import("@/components/web/editor"), {
+  // Make sure we turn SSR off
+  ssr: false,
+});
 
 const QuestionForm = () => {
+  const editorRef = useRef<MDXEditorMethods | null>(null);
+
   const form = useForm({
     resolver: zodResolver(askQuestionSchema),
     defaultValues: {
@@ -71,6 +80,11 @@ const QuestionForm = () => {
                   <span className="text-primary-500">*</span>
                 </FieldLabel>
                 {/*<Input aria-invalid={fieldState.invalid} type="text" {...field} />*/}
+                <Editor
+                  editorRef={editorRef}
+                  value={field.value}
+                  fieldChange={field.onChange}
+                />
                 <FieldDescription className="text-light-500">
                   Introduce the problem and expand on what you&apos;ve put in
                   the title.
