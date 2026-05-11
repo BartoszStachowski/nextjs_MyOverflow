@@ -32,11 +32,11 @@ const dbConnect = async (): Promise<Mongoose> => {
     cached.promise = mongoose
       .connect(MONGODB_URI)
       .then((result) => {
-        logger.info("Connected to MongoDB");
+        logger.info(`Connected to MongoDB: ${result.connection.name}`);
         return result;
       })
       .catch((error) => {
-        logger.error("Error connecting to MongoDB", error);
+        logger.error({ err: error }, "Error connecting to MongoDB");
         throw error;
       });
   }

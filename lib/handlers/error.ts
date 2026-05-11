@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { RequestError, ValidationError } from "@/lib/http-errors";
-import { treeifyError, ZodError } from "zod";
+import { flattenError, ZodError } from "zod";
 import logger from "@/lib/logger";
 
 export type ResponseType = "api" | "server";
@@ -39,12 +39,8 @@ const handleError = (error: unknown, responseType: ResponseType = "server") => {
   }
 
   if (error instanceof ZodError) {
-    // const validationError = new ValidationError(
-    //   error.flatten().fieldErrors as Record<string, string[]>
-    // );
-
-    const treeifiedError = treeifyError(error);
-    const validationError = new ValidationError(treeifiedError);
+    const { fieldErrors } = flattenError(error);
+    const validationError = new ValidationError(fieldErrors);
 
     logger.error(
       { err: error },

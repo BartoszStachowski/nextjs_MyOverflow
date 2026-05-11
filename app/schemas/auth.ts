@@ -38,3 +38,14 @@ export const signUpSchema = z.object({
     .max(50, "Name cannot exceed 50 characters.")
     .regex(/^[a-zA-Z\s]+$/, "Name can only contain letters and spaces."),
 });
+
+export const UserSchema = z.object({
+  name: z.string().min(1, "Name is required."),
+  username: z.string().min(3, "Username must be at least 3 characters long."),
+  email: z.string().email("Please provide a valid email address."),
+  bio: z.string().optional(),
+  image: z.string().url("Please provide a valid URL.").optional(),
+  location: z.string().optional(),
+  portfolio: z.string().url("Please provide a valid URL.").optional(),
+  reputation: z.number().optional(),
+});
