@@ -1,5 +1,17 @@
 import { z } from "zod";
 
+const passwordSchema = z
+  .string()
+  .min(6, "Password must be at least 6 characters")
+  .max(100, "Password cannot exceed 100 characters")
+  .regex(/[A-Z]/, "Password must contain at least one uppercase letter.")
+  .regex(/[a-z]/, "Password must contain at least one lowercase letter.")
+  .regex(/[0-9]/, "Password must contain at least one number.")
+  .regex(
+    /[^a-zA-Z0-9]/,
+    "Password must contain at least one special character."
+  );
+
 export const signInSchema = z.object({
   email: z
     .string()
@@ -21,17 +33,7 @@ export const signUpSchema = z.object({
     .string()
     .min(1, "Email is required.")
     .email("Please provide a valid email address."),
-  password: z
-    .string()
-    .min(6, "Password must be at least 6 characters")
-    .max(100, "Password cannot exceed 100 characters")
-    .regex(/[A-Z]/, "Password must contain at least one uppercase letter.")
-    .regex(/[a-z]/, "Password must contain at least one lowercase letter.")
-    .regex(/[0-9]/, "Password must contain at least one number.")
-    .regex(
-      /[^a-zA-Z0-9]/,
-      "Password must contain at least one special character."
-    ),
+  password: passwordSchema,
   name: z
     .string()
     .min(1, "Name is required.")
@@ -48,4 +50,13 @@ export const UserSchema = z.object({
   location: z.string().optional(),
   portfolio: z.string().url("Please provide a valid URL.").optional(),
   reputation: z.number().optional(),
+});
+
+export const AccountSchema = z.object({
+  userId: z.string().min(1, "User ID is required."),
+  name: z.string().min(1, "Name is required."),
+  image: z.string().url("Please provide a valid URL.").optional(),
+  password: passwordSchema.optional(),
+  provider: z.string().min(1, "Provider is required."),
+  providerAccountId: z.string().min(1, "Provider account ID is required."),
 });
