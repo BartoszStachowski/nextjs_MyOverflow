@@ -3,7 +3,6 @@
 import { NotFoundError } from "@humanfs/core";
 import handleError from "@/lib/handlers/error";
 import dbConnect from "@/lib/mongoose";
-import User from "@/database/user.model";
 import { NextResponse } from "next/server";
 import { AccountSchema } from "@/app/schemas/auth";
 import Account from "@/database/account.model";
@@ -41,7 +40,7 @@ export async function DELETE(
 
     await dbConnect();
 
-    const account = await User.findByIdAndDelete(id);
+    const account = await Account.findByIdAndDelete(id);
     if (!account) throw new NotFoundError("Account");
 
     return NextResponse.json({ success: true, data: account }, { status: 200 });

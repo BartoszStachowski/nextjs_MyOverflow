@@ -7,11 +7,14 @@ import { flattenError } from "zod";
 import User from "@/database/user.model";
 import { NotFoundError } from "@humanfs/core";
 import { NextResponse } from "next/server";
+import dbConnect from "@/lib/mongoose";
 
 export async function POST(request: Request) {
   const { email } = await request.json();
 
   try {
+    await dbConnect();
+
     const validatedData = UserSchema.partial().safeParse({ email });
 
     if (!validatedData.success) {
