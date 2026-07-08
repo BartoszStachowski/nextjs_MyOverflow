@@ -1,6 +1,6 @@
 "use server";
 
-import { signUpSchema } from "@/app/schemas/auth";
+import { signInSchema, signUpSchema } from "@/app/schemas/auth";
 import { z } from "zod";
 import { auth } from "@/lib/auth";
 import action from "@/lib/handlers/action";
@@ -25,6 +25,34 @@ export const signUpWithCredentialsAction = async (
         name,
         password,
         username,
+      },
+      headers: await headers(),
+    });
+
+    return {
+      success: true,
+    };
+  } catch (error) {
+    return handleError(error) as ErrorResponse;
+  }
+};
+
+export const signInWithCredentialsAction = async (
+  params: z.infer<typeof signInSchema>
+) => {
+  const validationResult = await action({ params, schema: signInSchema });
+
+  if (validationResult instanceof Error) {
+    return handleError(validationResult) as ErrorResponse;
+  }
+
+  const { email, password } = params;
+
+  try {
+    await auth.api.signInEmail({
+      body: {
+        email,
+        password,
       },
       headers: await headers(),
     });

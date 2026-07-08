@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { startTransition } from "react";
 import { z } from "zod";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -15,8 +15,12 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import ROUTES from "@/constants/routes";
+import { signInWithCredentialsAction } from "@/lib/actions/auth.action";
+import { toast } from "sonner";
+import { useRouter } from "next/navigation";
 
 const SignInPage = () => {
+  const router = useRouter();
   const form = useForm({
     resolver: zodResolver(signInSchema),
     defaultValues: {
@@ -26,7 +30,25 @@ const SignInPage = () => {
   });
 
   const onSubmit = (data: z.infer<typeof signInSchema>) => {
-    console.log(data);
+    startTransition(async () => {
+      const result = (await signInWithCredentialsAction(
+        data
+      )) as ActionResponse;
+
+      console.log("MY RESULT::", result);
+
+      if (result?.success) {
+        toast.success("Success", {
+          description: "Signed in successfully",
+        });
+
+        router.push(ROUTES.HOME);
+      } else {
+        toast.error("Error", {
+          description: result?.error?.message || "Something went wrong",
+        });
+      }
+    });
   };
 
   return (
