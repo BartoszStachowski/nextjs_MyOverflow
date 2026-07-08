@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { startTransition } from "react";
 import {
   Field,
   FieldError,
@@ -15,8 +15,12 @@ import ROUTES from "@/constants/routes";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { signUpSchema } from "@/app/schemas/auth";
 import { z } from "zod";
+import { signUpWithCredentialsAction } from "@/lib/actions/auth.action";
+import { toast } from "sonner";
+import { useRouter } from "next/navigation";
 
 const SignUpPage = () => {
+  const router = useRouter();
   const form = useForm({
     resolver: zodResolver(signUpSchema),
     defaultValues: {
@@ -28,7 +32,23 @@ const SignUpPage = () => {
   });
 
   const onSubmit = (data: z.infer<typeof signUpSchema>) => {
-    console.log(data);
+    startTransition(async () => {
+      const result = (await signUpWithCredentialsAction(
+        data
+      )) as ActionResponse;
+
+      if (result?.success) {
+        toast.success("Success", {
+          description: "Signed up successfully",
+        });
+
+        router.push(ROUTES.HOME);
+      } else {
+        toast.error("Error", {
+          description: result?.error?.message || "Something went wrong",
+        });
+      }
+    });
   };
 
   return (
@@ -94,7 +114,7 @@ const SignUpPage = () => {
           )}
         />
         <Button className="primary-gradient paragraph-medium font-inter text-light-900 min-h-12 w-full rounded-md px-4 py-3">
-          Sign in
+          Sign up
         </Button>
 
         <p>
