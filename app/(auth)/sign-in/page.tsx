@@ -35,8 +35,6 @@ const SignInPage = () => {
         data
       )) as ActionResponse;
 
-      console.log("MY RESULT::", result);
-
       if (result?.success) {
         toast.success("Success", {
           description: "Signed in successfully",
