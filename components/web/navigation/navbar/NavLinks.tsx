@@ -12,11 +12,11 @@ import { cn } from "@/lib/utils";
 
 type Props = {
   isMobileNav?: boolean;
+  userId?: string;
 };
 
-const NavLinks = ({ isMobileNav = false }: Props) => {
+const NavLinks = ({ isMobileNav = false, userId }: Props) => {
   const pathname = usePathname();
-  const userId = "1";
 
   const getHref = (route: string | ((id: string) => string)) => {
     if (typeof route === "function") {
