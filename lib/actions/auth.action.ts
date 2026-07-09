@@ -64,3 +64,9 @@ export const signInWithCredentialsAction = async (
     return handleError(error) as ErrorResponse;
   }
 };
+
+export const signOutAction = async () => {
+  await auth.api.signOut({
+    headers: await headers(),
+  });
+};
