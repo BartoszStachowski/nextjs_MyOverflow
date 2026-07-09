@@ -1,6 +1,6 @@
 "use client";
 
-import React, { startTransition } from "react";
+import { useTransition } from "react";
 import { z } from "zod";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -18,6 +18,7 @@ import ROUTES from "@/constants/routes";
 import { signInWithCredentialsAction } from "@/lib/actions/auth.action";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
+import { Loader2Icon } from "lucide-react";
 
 const SignInPage = () => {
   const router = useRouter();
@@ -28,6 +29,7 @@ const SignInPage = () => {
       password: "",
     },
   });
+  const [isPending, startTransition] = useTransition();
 
   const onSubmit = (data: z.infer<typeof signInSchema>) => {
     startTransition(async () => {
@@ -87,8 +89,16 @@ const SignInPage = () => {
             </Field>
           )}
         />
-        <Button className="primary-gradient paragraph-medium font-inter text-light-900 min-h-12 w-full rounded-md px-4 py-3">
-          Sign in
+        <Button
+          type="submit"
+          disabled={isPending}
+          className="primary-gradient paragraph-medium font-inter text-light-900 min-h-12 w-full rounded-md px-4 py-3"
+        >
+          {isPending ? (
+            <Loader2Icon className="size-4 animate-spin" />
+          ) : (
+            "Sign in"
+          )}
         </Button>
 
         <p>

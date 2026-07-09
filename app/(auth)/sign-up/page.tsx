@@ -1,6 +1,6 @@
 "use client";
 
-import React, { startTransition } from "react";
+import { useTransition } from "react";
 import {
   Field,
   FieldError,
@@ -18,6 +18,7 @@ import { z } from "zod";
 import { signUpWithCredentialsAction } from "@/lib/actions/auth.action";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
+import { Loader2Icon } from "lucide-react";
 
 const SignUpPage = () => {
   const router = useRouter();
@@ -30,6 +31,7 @@ const SignUpPage = () => {
       username: "",
     },
   });
+  const [isPending, startTransition] = useTransition();
 
   const onSubmit = (data: z.infer<typeof signUpSchema>) => {
     startTransition(async () => {
@@ -113,8 +115,17 @@ const SignUpPage = () => {
             </Field>
           )}
         />
-        <Button className="primary-gradient paragraph-medium font-inter text-light-900 min-h-12 w-full rounded-md px-4 py-3">
-          Sign up
+
+        <Button
+          type="submit"
+          disabled={isPending}
+          className="primary-gradient paragraph-medium font-inter text-light-900 min-h-12 w-full rounded-md px-4 py-3"
+        >
+          {isPending ? (
+            <Loader2Icon className="size-4 animate-spin" />
+          ) : (
+            "Sign up"
+          )}
         </Button>
 
         <p>
