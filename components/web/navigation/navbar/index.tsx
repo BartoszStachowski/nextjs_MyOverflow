@@ -4,8 +4,17 @@ import Image from "next/image";
 import Theme from "@/components/web/navigation/navbar/Theme";
 import MobileNavigation from "@/components/web/navigation/navbar/MobileNavigation";
 import ROUTES from "@/constants/routes";
+import { auth } from "@/lib/auth";
+import { headers } from "next/headers";
+import UserAvatar from "@/components/web/base/UserAvatar";
 
-const Navbar = () => {
+const Navbar = async () => {
+  const session = await auth.api.getSession({
+    headers: await headers(),
+  });
+
+  const userId = session?.user?.id;
+
   return (
     <nav className="flex-between background-light900_dark200 shadow-light-300 fixed z-50 w-full gap-5 p-6 sm:px-12 dark:shadow-none">
       <Link href={ROUTES.HOME} className="flex items-center gap-1">
@@ -24,6 +33,15 @@ const Navbar = () => {
       <p>Global Search</p>
       <div className="flex-between gap-5">
         <Theme />
+
+        {userId && (
+          <UserAvatar
+            userId={userId}
+            name={session?.user?.name}
+            imageUrl={session?.user?.image}
+          />
+        )}
+
         <MobileNavigation />
       </div>
     </nav>
