@@ -2,6 +2,7 @@
 
 - Next.js 16
 - Better-Auth
+- MongoDB
 - TypeScript
 - shadcn/ui
 - Tailwind CSS
@@ -11,7 +12,8 @@
 
 ## 🤖 Features
 
-- **Authentication** with Better Auth (Google, GitHub)
+- **Authentication** with Better Auth (Google, GitHub, email and password)
+- 
 
 ## 🧙‍♂️ Run Project
 
