@@ -122,6 +122,9 @@ const QuestionForm = () => {
                   value={field.value}
                   fieldChange={field.onChange}
                 />
+                {fieldState.invalid && (
+                  <FieldError errors={[fieldState.error]} />
+                )}
                 <FieldDescription className="text-light-500">
                   Introduce the problem and expand on what you&apos;ve put in
                   the title.
