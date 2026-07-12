@@ -4,8 +4,8 @@ import { ZodSchema } from "zod";
 import { ZodError, flattenError } from "zod";
 import { UnauthorizedError, ValidationError } from "@/lib/http-errors";
 import { auth } from "@/lib/auth";
-import { headers } from "next/headers";
 import dbConnect from "@/lib/mongoose";
+import { getServerSession } from "@/lib/auth/get-server-session";
 
 type ActionOptions<T> = {
   params?: T;
@@ -36,9 +36,7 @@ async function action<T>({
   let session: AuthSession | null = null;
 
   if (authorize) {
-    session = await auth.api.getSession({
-      headers: await headers(),
-    });
+    session = await getServerSession();
 
     if (!session) {
       return new UnauthorizedError();

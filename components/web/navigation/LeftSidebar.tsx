@@ -4,17 +4,13 @@ import Link from "next/link";
 import ROUTES from "@/constants/routes";
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
-import { auth } from "@/lib/auth";
-import { headers } from "next/headers";
 
 import { LogOut } from "lucide-react";
 import { signOutAction } from "@/lib/actions/auth.action";
+import { getServerSession } from "@/lib/auth/get-server-session";
 
 const LeftSidebar = async () => {
-  const session = await auth.api.getSession({
-    headers: await headers(),
-  });
-
+  const session = await getServerSession();
   const userId = session?.user?.id;
 
   return (

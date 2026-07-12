@@ -6,6 +6,8 @@ import { auth } from "@/lib/auth";
 import action from "@/lib/handlers/action";
 import handleError from "@/lib/handlers/error";
 import { headers } from "next/headers";
+import { redirect } from "next/navigation";
+import ROUTES from "@/constants/routes";
 
 export const signUpWithCredentialsAction = async (
   params: z.infer<typeof signUpSchema>
@@ -69,4 +71,6 @@ export const signOutAction = async () => {
   await auth.api.signOut({
     headers: await headers(),
   });
+
+  return redirect(ROUTES.HOME);
 };

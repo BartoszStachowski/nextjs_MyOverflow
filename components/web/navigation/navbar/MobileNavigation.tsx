@@ -1,11 +1,8 @@
-import { auth } from "@/lib/auth";
-import { headers } from "next/headers";
 import MobileNavigationClient from "./MobileNavigationClient";
+import { getServerSession } from "@/lib/auth/get-server-session";
 
 const MobileNavigation = async () => {
-  const session = await auth.api.getSession({
-    headers: await headers(),
-  });
+  const session = await getServerSession();
 
   const userId = session?.user?.id;
 

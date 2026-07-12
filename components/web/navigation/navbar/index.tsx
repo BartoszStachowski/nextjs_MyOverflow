@@ -4,14 +4,11 @@ import Image from "next/image";
 import Theme from "@/components/web/navigation/navbar/Theme";
 import MobileNavigation from "@/components/web/navigation/navbar/MobileNavigation";
 import ROUTES from "@/constants/routes";
-import { auth } from "@/lib/auth";
-import { headers } from "next/headers";
 import UserAvatar from "@/components/web/base/UserAvatar";
+import { getServerSession } from "@/lib/auth/get-server-session";
 
 const Navbar = async () => {
-  const session = await auth.api.getSession({
-    headers: await headers(),
-  });
+  const session = await getServerSession();
 
   const userId = session?.user?.id;
 

@@ -1,13 +1,14 @@
 import React from "react";
 import QuestionForm from "@/components/web/forms/QuestionForm";
 import { redirect } from "next/navigation";
-import { getSession } from "@/lib/auth/get-session";
+import { getServerSession } from "@/lib/auth/get-server-session";
+import ROUTES from "@/constants/routes";
 
 const AskQuestionPage = async () => {
-  const session = await getSession();
+  const session = await getServerSession();
 
   if (!session) {
-    return redirect("/sign-in");
+    return redirect(ROUTES.SIGN_IN);
   }
 
   return (
