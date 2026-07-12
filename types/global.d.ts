@@ -36,3 +36,11 @@ type ErrorResponse = ActionResponse<undefined> & { success: false };
 
 type APIErrorResponse = NextResponse<ErrorResponse>;
 type APIResponse<T = null> = NextResponseM<SuccessResponse<T> | ErrorResponse>;
+
+// difference between params and searchParams
+// params: /users/[id]
+// searchParams: /users?id=123
+interface RouteParams {
+  params: Promise<Record<string, string>>;
+  searchParams: Promise<Record<string, string>>;
+}

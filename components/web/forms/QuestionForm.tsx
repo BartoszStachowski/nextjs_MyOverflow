@@ -14,10 +14,15 @@ import {
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { useRef } from "react";
+import { useRef, useTransition } from "react";
 import { MDXEditorMethods } from "@mdxeditor/editor";
 import dynamic from "next/dynamic";
 import TagCard from "@/components/web/cards/TagCard";
+import { createQuestion } from "@/lib/actions/question.action";
+import { toast } from "sonner";
+import { useRouter } from "next/navigation";
+import ROUTES from "@/constants/routes";
+import { Loader2Icon } from "lucide-react";
 
 const Editor = dynamic(() => import("@/components/web/editor"), {
   // Make sure we turn SSR off
@@ -25,7 +30,9 @@ const Editor = dynamic(() => import("@/components/web/editor"), {
 });
 
 const QuestionForm = () => {
+  const router = useRouter();
   const editorRef = useRef<MDXEditorMethods | null>(null);
+  const [isPending, startTransition] = useTransition();
 
   const form = useForm({
     resolver: zodResolver(askQuestionSchema),
@@ -75,12 +82,28 @@ const QuestionForm = () => {
     }
   };
 
-  const onSubmit = (data: z.infer<typeof askQuestionSchema>) => {
-    console.log(data);
+  const handleCreateQuestion = async (
+    data: z.infer<typeof askQuestionSchema>
+  ) => {
+    startTransition(async () => {
+      const result = await createQuestion(data);
+
+      if (result.success) {
+        toast.success("Success", {
+          description: "Question created successfully",
+        });
+
+        if (result.data) router.push(ROUTES.QUESTION(result.data._id));
+      } else {
+        toast.error(`Error ${result.status}`, {
+          description: result.error?.message || "Something went wrong",
+        });
+      }
+    });
   };
 
   return (
-    <form onSubmit={form.handleSubmit(onSubmit)}>
+    <form onSubmit={form.handleSubmit(handleCreateQuestion)}>
       <FieldSet>
         <FieldGroup className="@container/field-group flex flex-col gap-10">
           <Controller
@@ -175,8 +198,19 @@ const QuestionForm = () => {
             )}
           />
           <div className="flex justify-end">
-            <Button className="primary-gradient text-light-900! w-fit">
-              Ask A Question
+            <Button
+              className="primary-gradient text-light-900! w-fit"
+              disabled={isPending}
+              type="submit"
+            >
+              {isPending ? (
+                <>
+                  <Loader2Icon className="size-4 animate-spin" />
+                  <span>Submitting</span>
+                </>
+              ) : (
+                "Ask A Question"
+              )}
             </Button>
           </div>
         </FieldGroup>
