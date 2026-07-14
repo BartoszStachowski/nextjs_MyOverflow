@@ -13,6 +13,14 @@ export const askQuestionSchema = z.object({
         .min(1, "Tag is required")
         .max(30, "Tag cannot exceed 30 characters")
     )
-    .min(1, "At last one tag is required")
+    .min(1, "At least one tag is required")
     .max(3, "Cannot add more than 3 tags"),
 });
+
+export const getQuestionSchema = z.object({
+  questionId: z.string().min(1, "Question ID is required"),
+});
+
+export const editQuestionSchema = askQuestionSchema.extend(
+  getQuestionSchema.shape
+);

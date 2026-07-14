@@ -18,7 +18,7 @@ import { useRef, useTransition } from "react";
 import { MDXEditorMethods } from "@mdxeditor/editor";
 import dynamic from "next/dynamic";
 import TagCard from "@/components/web/cards/TagCard";
-import { createQuestion } from "@/lib/actions/question.action";
+import { createQuestion, editQuestion } from "@/lib/actions/question.action";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import ROUTES from "@/constants/routes";
@@ -29,7 +29,12 @@ const Editor = dynamic(() => import("@/components/web/editor"), {
   ssr: false,
 });
 
-const QuestionForm = () => {
+interface Props {
+  question?: Question;
+  isEdit?: boolean;
+}
+
+const QuestionForm = ({ question, isEdit = false }: Props) => {
   const router = useRouter();
   const editorRef = useRef<MDXEditorMethods | null>(null);
   const [isPending, startTransition] = useTransition();
@@ -37,9 +42,9 @@ const QuestionForm = () => {
   const form = useForm({
     resolver: zodResolver(askQuestionSchema),
     defaultValues: {
-      title: "",
-      content: "",
-      tags: [],
+      title: question?.title || "",
+      content: question?.content || "",
+      tags: question?.tags.map((tag) => tag.name) || [],
     },
   });
 
@@ -86,18 +91,27 @@ const QuestionForm = () => {
     data: z.infer<typeof askQuestionSchema>
   ) => {
     startTransition(async () => {
-      const result = await createQuestion(data);
+      const result =
+        isEdit && question
+          ? await editQuestion({ questionId: question?._id, ...data })
+          : await createQuestion(data);
 
-      if (result.success) {
-        toast.success("Success", {
-          description: "Question created successfully",
-        });
-
-        if (result.data) router.push(ROUTES.QUESTION(result.data._id));
-      } else {
+      if (!result.success) {
         toast.error(`Error ${result.status}`, {
           description: result.error?.message || "Something went wrong",
         });
+
+        return;
+      }
+
+      toast.success("Success", {
+        description: isEdit
+          ? "Question updated successfully"
+          : "Question created successfully",
+      });
+
+      if (result.data) {
+        router.push(ROUTES.QUESTION(result.data._id));
       }
     });
   };
@@ -209,7 +223,7 @@ const QuestionForm = () => {
                   <span>Submitting</span>
                 </>
               ) : (
-                "Ask A Question"
+                <>{isEdit ? "Edit" : "Ask A Question"}</>
               )}
             </Button>
           </div>

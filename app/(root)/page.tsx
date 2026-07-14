@@ -10,7 +10,7 @@ const questions: Question[] = [
   {
     _id: "1",
     title: "How to learn React?",
-    description: "I want to learn React, can anyone help me?",
+    content: "I want to learn React, can anyone help me?",
     tags: [
       { _id: "1", name: "React " },
       { _id: "2", name: "JavaScript" },
@@ -28,8 +28,7 @@ const questions: Question[] = [
   {
     _id: "2",
     title: "Best practices for Node.js API?",
-    description:
-      "What are the industry standards for structuring a Node.js API?",
+    content: "What are the industry standards for structuring a Node.js API?",
     tags: [
       { _id: "3", name: "Node.js" },
       { _id: "4", name: "Backend" },
@@ -48,7 +47,7 @@ const questions: Question[] = [
   {
     _id: "3",
     title: "Flexbox vs Grid?",
-    description: "When should I use CSS Grid and when is Flexbox better?",
+    content: "When should I use CSS Grid and when is Flexbox better?",
     tags: [
       { _id: "5", name: "CSS" },
       { _id: "6", name: "Frontend" },
