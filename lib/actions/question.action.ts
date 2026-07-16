@@ -327,9 +327,6 @@ export const getQuestions = async (
 
     const isNext = totalQuestions > skip + questions.length;
 
-    console.log("--------------------------------------");
-    console.log(questions);
-
     return {
       success: true,
       data: { questions: JSON.parse(JSON.stringify(questions)), isNext },
