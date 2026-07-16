@@ -1,6 +1,6 @@
 "use server";
 
-import mongoose from "mongoose";
+import mongoose, { QueryFilter } from "mongoose";
 
 import {
   askQuestionSchema,
@@ -12,9 +12,10 @@ import action from "@/lib/handlers/action";
 import handleError from "@/lib/handlers/error";
 
 // models
-import Question from "@/database/question.model";
+import Question, { IQuestionDoc } from "@/database/question.model";
 import Tag, { ITagDoc } from "@/database/tag.model";
 import TagQuestion from "@/database/tag-question.model";
+import { paginatedSearchParamsSchema } from "@/app/schemas/general";
 
 export const createQuestion = async (
   params: z.infer<typeof askQuestionSchema>
@@ -107,7 +108,7 @@ export const createQuestion = async (
 
 export const editQuestion = async (
   params: z.infer<typeof editQuestionSchema>
-): Promise<ActionResponse<Question>> => {
+): Promise<ActionResponse<IQuestionDoc>> => {
   const validationResult = await action({
     params,
     schema: editQuestionSchema,
@@ -258,6 +259,80 @@ export const getQuestion = async (
     return {
       success: true,
       data: JSON.parse(JSON.stringify(question)),
+    };
+  } catch (error) {
+    return handleError(error) as ErrorResponse;
+  }
+};
+
+export const getQuestions = async (
+  params: z.infer<typeof paginatedSearchParamsSchema>
+): Promise<ActionResponse<{ questions: Question[]; isNext: boolean }>> => {
+  const validationResult = await action({
+    params,
+    schema: paginatedSearchParamsSchema,
+  });
+
+  if (validationResult instanceof Error) {
+    return handleError(validationResult) as ErrorResponse;
+  }
+
+  const { page = 1, pageSize = 10, query, filter } = params;
+  const skip = (Number(page) - 1) * Number(pageSize);
+  const limit = Number(pageSize);
+
+  const filterQuery: QueryFilter<typeof Question> = {};
+
+  // TODO: Add recommended
+  if (filter === "recommended") {
+    return { success: true, data: { questions: [], isNext: false } };
+  }
+
+  if (query) {
+    filterQuery.$or = [
+      { title: { $regex: new RegExp(query, "i") } },
+      { content: { $regex: new RegExp(query, "i") } },
+    ];
+  }
+
+  let sortCriteria = {};
+
+  switch (filter) {
+    case "newest":
+      sortCriteria = { createdAt: -1 };
+      break;
+    case "unanswered":
+      filterQuery.answers = 0;
+      sortCriteria = { createdAt: -1 };
+      break;
+    case "popular":
+      sortCriteria = { upvotes: -1 };
+      break;
+    default:
+      sortCriteria = { createdAt: -1 };
+      break;
+  }
+
+  try {
+    const totalQuestions = await Question.countDocuments(filterQuery);
+    const questions = await Question.find(filterQuery)
+      .populate<{
+        tags: ITagDoc;
+      }>("tags", "name")
+      .populate("author", "name image")
+      .lean() // convert to plain object
+      .sort(sortCriteria)
+      .skip(skip)
+      .limit(limit);
+
+    const isNext = totalQuestions > skip + questions.length;
+
+    console.log("--------------------------------------");
+    console.log(questions);
+
+    return {
+      success: true,
+      data: { questions: JSON.parse(JSON.stringify(questions)), isNext },
     };
   } catch (error) {
     return handleError(error) as ErrorResponse;
