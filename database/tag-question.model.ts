@@ -7,10 +7,13 @@ export interface ITagQuestion {
 
 export type ITagQuestionDoc = HydratedDocument<ITagQuestion>;
 
-const TagQuestionSchema = new Schema<ITagQuestion>({
-  tag: { type: Schema.Types.ObjectId, ref: "Tag", required: true },
-  question: { type: Schema.Types.ObjectId, ref: "Question", required: true },
-});
+const TagQuestionSchema = new Schema<ITagQuestion>(
+  {
+    tag: { type: Schema.Types.ObjectId, ref: "Tag", required: true },
+    question: { type: Schema.Types.ObjectId, ref: "Question", required: true },
+  },
+  { timestamps: true }
+);
 
 const TagQuestion =
   models?.TagQuestion || model<ITagQuestion>("TagQuestion", TagQuestionSchema);

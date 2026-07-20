@@ -7,10 +7,13 @@ export interface ICollection {
 
 export type ICollectionDoc = HydratedDocument<ICollection>;
 
-const CollectionSchema = new Schema<ICollection>({
-  author: { type: Schema.Types.ObjectId, ref: "User", required: true },
-  question: { type: Schema.Types.ObjectId, ref: "Question", required: true },
-});
+const CollectionSchema = new Schema<ICollection>(
+  {
+    author: { type: Schema.Types.ObjectId, ref: "User", required: true },
+    question: { type: Schema.Types.ObjectId, ref: "Question", required: true },
+  },
+  { timestamps: true }
+);
 
 const Collection =
   models?.Collection || model<ICollection>("Collection", CollectionSchema);
