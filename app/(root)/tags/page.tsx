@@ -1,5 +1,5 @@
 import React from "react";
-import { getTags } from "@/lib/actions/tag.actions";
+import { getTags } from "@/lib/actions/tag.action";
 import LocalSearch from "@/components/web/search/LocalSearch";
 import ROUTES from "@/constants/routes";
 import DataRenderer from "@/components/web/base/DataRenderer";
