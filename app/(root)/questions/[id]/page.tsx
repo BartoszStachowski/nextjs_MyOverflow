@@ -4,6 +4,7 @@ import Link from "next/link";
 import Metric from "@/components/web/base/Metric";
 import { formatNumber, getTimeStamp } from "@/lib/utils";
 import TagCard from "@/components/web/cards/TagCard";
+import Preview from "@/components/web/editor/Preview";
 
 const sampleQuestion = {
   id: "q123",
@@ -89,7 +90,7 @@ Looking forward to your suggestions and examples!
 const QuestionDetails = async ({ params }: RouteParams) => {
   const { id } = await params;
 
-  const { author, createdAt, answers, views, tags, title } = sampleQuestion;
+  const { author, createdAt, answers, views, tags, content } = sampleQuestion;
 
   return (
     <>
@@ -148,7 +149,7 @@ const QuestionDetails = async ({ params }: RouteParams) => {
         />
       </div>
 
-      <p>Preview Content</p>
+      <Preview content={content} />
 
       <div className="mt-8 flex flex-wrap gap-2">
         {tags.map((tag: Tag) => (
