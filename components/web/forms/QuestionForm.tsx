@@ -111,7 +111,7 @@ const QuestionForm = ({ question, isEdit = false }: Props) => {
       });
 
       if (result.data) {
-        router.push(ROUTES.QUESTION(result.data._id));
+        router.push(ROUTES.QUESTION(result.data._id.toString()));
       }
     });
   };

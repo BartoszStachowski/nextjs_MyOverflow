@@ -11,3 +11,7 @@ export const paginatedSearchParamsSchema = z.object({
 export const getTagQuestionSchema = paginatedSearchParamsSchema
   .omit({ filter: true })
   .extend({ tagId: z.string().min(1, "Tag ID is required") });
+
+export const answerSchema = z.object({
+  content: z.string().min(100, "Answer has to have more than 100 characters."),
+});
