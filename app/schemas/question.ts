@@ -24,3 +24,7 @@ export const getQuestionSchema = z.object({
 export const editQuestionSchema = askQuestionSchema.extend(
   getQuestionSchema.shape
 );
+
+export const incrementViewsSchema = z.object({
+  questionId: z.string().min(1, "Question ID is required"),
+});
