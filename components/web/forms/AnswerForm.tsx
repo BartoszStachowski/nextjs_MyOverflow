@@ -11,13 +11,19 @@ import dynamic from "next/dynamic";
 import { Button } from "@/components/ui/button";
 import { Loader2Icon } from "lucide-react";
 import Image from "next/image";
+import { createAnswer } from "@/lib/actions/answer.action";
+import { toast } from "sonner";
+
+interface Props {
+  questionId: string;
+}
 
 const Editor = dynamic(() => import("@/components/web/editor"), {
   // Make sure we turn SSR off
   ssr: false,
 });
 
-const AnswerForm = () => {
+const AnswerForm = ({ questionId }: Props) => {
   const editorRef = useRef<MDXEditorMethods | null>(null);
   const [isPending, startTransition] = useTransition();
   const [isAISubmitting, setIsAISubmitting] = useState(false);
@@ -31,7 +37,20 @@ const AnswerForm = () => {
 
   const handleSubmit = (data: z.infer<typeof answerSchema>) => {
     startTransition(async () => {
-      console.log(data);
+      const result = await createAnswer({ questionId, ...data });
+
+      if (result.success) {
+        form.reset();
+        editorRef.current?.setMarkdown("");
+
+        toast.success("Success", {
+          description: "Answer created successfully",
+        });
+      } else {
+        toast.error(`Error ${result.status}`, {
+          description: result.error?.message || "Something went wrong",
+        });
+      }
     });
   };
 
