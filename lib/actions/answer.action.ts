@@ -2,7 +2,7 @@
 import { z } from "zod";
 import mongoose from "mongoose";
 
-import { answerServerSchema } from "@/app/schemas/general";
+import { answerServerSchema, getAnswersSchema } from "@/app/schemas/general";
 import { IAnswerDoc } from "@/database/answer.model";
 import action from "@/lib/handlers/action";
 import handleError from "@/lib/handlers/error";
@@ -66,5 +66,68 @@ export const createAnswer = async (
     return handleError(error) as ErrorResponse;
   } finally {
     await session.endSession();
+  }
+};
+
+export const getAnswers = async (
+  params: z.infer<typeof getAnswersSchema>
+): Promise<
+  ActionResponse<{
+    answers: Answer[];
+    isNext: boolean;
+    totalAnswers: number;
+  }>
+> => {
+  const validationResult = await action({
+    params,
+    schema: getAnswersSchema,
+  });
+
+  if (validationResult instanceof Error) {
+    return handleError(validationResult) as ErrorResponse;
+  }
+
+  const { questionId, page = 1, pageSize = 10, filter } = params;
+
+  const skip = (Number(page) - 1) * Number(pageSize);
+  const limit = Number(pageSize);
+
+  let sortCriteria = {};
+
+  switch (filter) {
+    case "latest":
+      sortCriteria = { createdAt: -1 };
+      break;
+    case "oldest":
+      sortCriteria = { createdAt: 1 };
+      break;
+    case "popular":
+      sortCriteria = { upvotes: -1 };
+      break;
+    default:
+      sortCriteria = { createdAt: -1 };
+      break;
+  }
+  try {
+    const totalAnswers = await Answer.countDocuments({ question: questionId });
+
+    const answers = await Answer.find({ question: questionId })
+      .populate("author", "_id name image")
+      .sort(sortCriteria)
+      .skip(skip)
+      .limit(limit);
+
+    const isNext = totalAnswers > skip + answers.length;
+
+    return {
+      success: true,
+      data: {
+        answers: JSON.parse(JSON.stringify(answers)),
+        isNext,
+        totalAnswers,
+      },
+    };
+  } catch (error) {
+    return handleError(error) as ErrorResponse;
   }
 };
