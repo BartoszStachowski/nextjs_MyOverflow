@@ -85,7 +85,12 @@ const AnswerForm = ({ questionId }: Props) => {
       </div>
 
       <form
-        onSubmit={form.handleSubmit(handleSubmit)}
+        // Call handleSubmit inside the event handler to avoid the ESLint refs warning.
+        // This ensures that editorRef.current is accessed only after the form is submitted,
+        // not while the component is rendering.
+        onSubmit={(event) => {
+          void form.handleSubmit(handleSubmit)(event);
+        }}
         className="mt-6 flex w-full flex-col gap-10"
       >
         <FieldSet>
