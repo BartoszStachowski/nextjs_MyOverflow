@@ -13,9 +13,13 @@ import Image from "next/image";
 import { createAnswer } from "@/lib/actions/answer.action";
 import { toast } from "sonner";
 import { answerSchema } from "@/app/schemas/answer";
+import { authClient } from "@/lib/auth-client";
+import { api } from "@/lib/api";
 
 interface Props {
   questionId: string;
+  questionTitle: string;
+  questionContent: string;
 }
 
 const Editor = dynamic(() => import("@/components/web/editor"), {
@@ -23,10 +27,16 @@ const Editor = dynamic(() => import("@/components/web/editor"), {
   ssr: false,
 });
 
-const AnswerForm = ({ questionId }: Props) => {
+const AnswerForm = ({ questionId, questionTitle, questionContent }: Props) => {
   const editorRef = useRef<MDXEditorMethods | null>(null);
   const [isPending, startTransition] = useTransition();
-  const [isAISubmitting, setIsAISubmitting] = useState(false);
+  const [isAIFormatting, setIsAIFormatting] = useState(false);
+
+  const {
+    data: session,
+    isPending: isSessionPending,
+    error: sessionError,
+  } = authClient.useSession();
 
   const form = useForm<z.infer<typeof answerSchema>>({
     resolver: zodResolver(answerSchema),
@@ -41,17 +51,96 @@ const AnswerForm = ({ questionId }: Props) => {
 
       if (result.success) {
         form.reset();
-        editorRef.current?.setMarkdown("");
 
         toast.success("Success", {
           description: "Answer created successfully",
         });
+
+        if (editorRef.current) {
+          editorRef.current?.setMarkdown("");
+        }
       } else {
         toast.error(`Error ${result.status}`, {
           description: result.error?.message || "Something went wrong",
         });
       }
     });
+  };
+
+  const formatAnswerWithAI = async () => {
+    if (isSessionPending) {
+      return;
+    }
+
+    if (sessionError) {
+      toast.error("Session error", {
+        description: sessionError.message || "Could not verify your session.",
+      });
+
+      return;
+    }
+
+    if (!session?.session?.token) {
+      toast.warning("Please log in", {
+        description: "You need to be logged in to use this feature.",
+      });
+
+      return;
+    }
+
+    const answerContent = editorRef.current?.getMarkdown().trim() ?? "";
+
+    form.setValue("content", answerContent, {
+      shouldDirty: true,
+      shouldTouch: true,
+    });
+
+    const isContentValid = await form.trigger("content");
+
+    if (!isContentValid) {
+      return;
+    }
+
+    setIsAIFormatting(true);
+
+    try {
+      const response = await api.ai.formatAnswer(
+        questionTitle,
+        questionContent,
+        answerContent
+      );
+
+      if (!response.success) {
+        toast.error("Error", {
+          description: response.error?.message || "Something went wrong",
+        });
+
+        return;
+      }
+
+      const formattedAnswer = response.data
+        .replace(/<br\s*\/?>/gi, "\n")
+        .trim();
+
+      editorRef.current?.setMarkdown(formattedAnswer);
+
+      form.setValue("content", formattedAnswer, {
+        shouldDirty: true,
+        shouldTouch: true,
+        shouldValidate: true,
+      });
+
+      toast.success("Success", {
+        description: "Your answer has been formatted successfully.",
+      });
+    } catch (error) {
+      toast.error("Error", {
+        description:
+          error instanceof Error ? error.message : "Something went wrong",
+      });
+    } finally {
+      setIsAIFormatting(false);
+    }
   };
 
   return (
@@ -62,12 +151,13 @@ const AnswerForm = ({ questionId }: Props) => {
         </h4>
         <Button
           className="btn light-border-2 text-primary-500 dark:text-primary-500 gap-1.5 rounded-md border px-4 py-2.5 shadow-none"
-          disabled={isAISubmitting}
+          disabled={isAIFormatting || isSessionPending}
+          onClick={formatAnswerWithAI}
         >
-          {isAISubmitting ? (
+          {isAIFormatting ? (
             <>
               <Loader2Icon className="size-4 animate-spin" />
-              <span>Generating...</span>
+              <span>Formatting...</span>
             </>
           ) : (
             <>
@@ -78,7 +168,7 @@ const AnswerForm = ({ questionId }: Props) => {
                 height={12}
                 className="object-contain"
               />
-              Generate AI Answer
+              Format with AI
             </>
           )}
         </Button>
@@ -114,7 +204,7 @@ const AnswerForm = ({ questionId }: Props) => {
           <div className="flex justify-end">
             <Button
               className="primary-gradient text-light-900! w-fit"
-              disabled={isPending}
+              disabled={isPending || isAIFormatting}
               type="submit"
             >
               {isPending ? (
