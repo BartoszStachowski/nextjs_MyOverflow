@@ -2,7 +2,6 @@
 
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { answerSchema } from "@/app/schemas/general";
 import { z } from "zod";
 import { useRef, useState, useTransition } from "react";
 import { Field, FieldError, FieldSet } from "@/components/ui/field";
@@ -13,6 +12,7 @@ import { Loader2Icon } from "lucide-react";
 import Image from "next/image";
 import { createAnswer } from "@/lib/actions/answer.action";
 import { toast } from "sonner";
+import { answerSchema } from "@/app/schemas/answer";
 
 interface Props {
   questionId: string;

@@ -2,13 +2,13 @@
 import { z } from "zod";
 import mongoose from "mongoose";
 
-import { answerServerSchema, getAnswersSchema } from "@/app/schemas/general";
 import { IAnswerDoc } from "@/database/answer.model";
 import action from "@/lib/handlers/action";
 import handleError from "@/lib/handlers/error";
 import { Answer, Question } from "@/database";
 import { revalidatePath } from "next/cache";
 import ROUTES from "@/constants/routes";
+import { answerServerSchema, getAnswersSchema } from "@/app/schemas/answer";
 
 export const createAnswer = async (
   params: z.infer<typeof answerServerSchema>
