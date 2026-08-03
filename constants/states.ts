@@ -37,6 +37,11 @@ export const EMPTY_TAGS = {
   },
 };
 
+export const EMPTY_ANSWERS = {
+  title: "No Answers Found",
+  message: "Looks like there are no answers yet. Be the first one!",
+};
+
 export const EMPTY_COLLECTIONS = {
   title: "No Collections Found",
   message: "Looks like there are no collections yet. Be the first one!",

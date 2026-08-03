@@ -1,15 +1,17 @@
-import UserAvatar from "@/components/web/base/UserAvatar";
 import ROUTES from "@/constants/routes";
 import Link from "next/link";
-import Metric from "@/components/web/base/Metric";
 import { formatNumber, getTimeStamp } from "@/lib/utils";
-import TagCard from "@/components/web/cards/TagCard";
-import Preview from "@/components/web/editor/Preview";
 import { getQuestion, incrementViews } from "@/lib/actions/question.action";
+import { getAnswers } from "@/lib/actions/answer.action";
 import { redirect } from "next/navigation";
 import { after } from "next/server";
+// components
+import AllAnswers from "@/components/web/answers/AllAnswers";
 import AnswerForm from "@/components/web/forms/AnswerForm";
-import { getAnswers } from "@/lib/actions/answer.action";
+import TagCard from "@/components/web/cards/TagCard";
+import Preview from "@/components/web/editor/Preview";
+import Metric from "@/components/web/base/Metric";
+import UserAvatar from "@/components/web/base/UserAvatar";
 
 const QuestionDetails = async ({ params }: RouteParams) => {
   const { id } = await params;
@@ -104,6 +106,15 @@ const QuestionDetails = async ({ params }: RouteParams) => {
           />
         ))}
       </div>
+
+      <section className="my-5">
+        <AllAnswers
+          data={answersData?.answers}
+          success={answersSuccess}
+          error={answersError}
+          totalAnswers={answersData?.totalAnswers || 0}
+        />
+      </section>
 
       <section className="my-5">
         <AnswerForm questionId={question._id} />
