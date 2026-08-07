@@ -60,3 +60,8 @@ interface Answer {
   content: string;
   createdAt: Date;
 }
+
+interface HasVotedResponse {
+  hasUpvoted: boolean;
+  hasDownvoted: boolean;
+}
