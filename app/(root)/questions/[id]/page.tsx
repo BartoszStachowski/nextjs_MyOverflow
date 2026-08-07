@@ -12,6 +12,7 @@ import TagCard from "@/components/web/cards/TagCard";
 import Preview from "@/components/web/editor/Preview";
 import Metric from "@/components/web/base/Metric";
 import UserAvatar from "@/components/web/base/UserAvatar";
+import Votes from "@/components/web/votes/Votes";
 
 const QuestionDetails = async ({ params }: RouteParams) => {
   const { id } = await params;
@@ -56,7 +57,12 @@ const QuestionDetails = async ({ params }: RouteParams) => {
           </div>
 
           <div className="flex justify-end">
-            <p>Votes</p>
+            <Votes
+              upvotes={question.upvotes}
+              downvotes={question.downvotes}
+              hasUpVoted={true}
+              hasDownVoted={false}
+            />
           </div>
         </div>
 
