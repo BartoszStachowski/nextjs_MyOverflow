@@ -1,4 +1,11 @@
-import { model, models, Schema, Types, HydratedDocument } from "mongoose";
+import {
+  model,
+  models,
+  Schema,
+  Types,
+  HydratedDocument,
+  Model,
+} from "mongoose";
 
 export interface IQuestion {
   title: string;
@@ -29,7 +36,8 @@ const QuestionSchema = new Schema<IQuestion>(
   }
 );
 
-const Question =
-  models?.Question || model<IQuestion>("Question", QuestionSchema);
+const Question: Model<IQuestion> =
+  (models.Question as Model<IQuestion>) ||
+  model<IQuestion>("Question", QuestionSchema);
 
 export default Question;

@@ -1,4 +1,11 @@
-import { model, models, Schema, Types, HydratedDocument } from "mongoose";
+import {
+  model,
+  models,
+  Schema,
+  Types,
+  HydratedDocument,
+  Model,
+} from "mongoose";
 
 export interface IVote {
   author: Types.ObjectId;
@@ -19,6 +26,7 @@ const VoteSchema = new Schema<IVote>(
   { timestamps: true }
 );
 
-const Vote = models?.Vote || model<IVote>("Vote", VoteSchema);
+const Vote: Model<IVote> =
+  (models.Vote as Model<IVote>) || model<IVote>("Vote", VoteSchema);
 
 export default Vote;

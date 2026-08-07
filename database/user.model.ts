@@ -1,4 +1,4 @@
-import { model, models, Schema, HydratedDocument } from "mongoose";
+import { model, models, Schema, HydratedDocument, Model } from "mongoose";
 
 export interface IUser {
   name: string;
@@ -30,6 +30,7 @@ const UserSchema = new Schema<IUser>(
   }
 );
 
-const User = models?.User || model<IUser>("User", UserSchema);
+const User: Model<IUser> =
+  (models.User as Model<IUser>) || model<IUser>("User", UserSchema);
 
 export default User;

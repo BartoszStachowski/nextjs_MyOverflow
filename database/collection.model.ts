@@ -1,4 +1,11 @@
-import { model, models, Schema, Types, HydratedDocument } from "mongoose";
+import {
+  model,
+  models,
+  Schema,
+  Types,
+  HydratedDocument,
+  Model,
+} from "mongoose";
 
 export interface ICollection {
   author: Types.ObjectId;
@@ -15,7 +22,8 @@ const CollectionSchema = new Schema<ICollection>(
   { timestamps: true }
 );
 
-const Collection =
-  models?.Collection || model<ICollection>("Collection", CollectionSchema);
+const Collection: Model<ICollection> =
+  (models.Collection as Model<ICollection>) ||
+  model<ICollection>("Collection", CollectionSchema);
 
 export default Collection;

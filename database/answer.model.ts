@@ -1,4 +1,11 @@
-import { model, models, Schema, Types, HydratedDocument } from "mongoose";
+import {
+  model,
+  models,
+  Schema,
+  Types,
+  HydratedDocument,
+  Model,
+} from "mongoose";
 
 export interface IAnswer {
   author: Types.ObjectId;
@@ -23,6 +30,7 @@ const AnswerSchema = new Schema<IAnswer>(
   }
 );
 
-const Answer = models?.Answer || model<IAnswer>("Answer", AnswerSchema);
+const Answer: Model<IAnswer> =
+  (models.Answer as Model<IAnswer>) || model<IAnswer>("Answer", AnswerSchema);
 
 export default Answer;

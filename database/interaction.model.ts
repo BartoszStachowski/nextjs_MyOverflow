@@ -1,4 +1,11 @@
-import { model, models, Schema, Types, HydratedDocument } from "mongoose";
+import {
+  model,
+  models,
+  Schema,
+  Types,
+  HydratedDocument,
+  Model,
+} from "mongoose";
 
 export interface IInteraction {
   user: Types.ObjectId;
@@ -19,7 +26,8 @@ const InteractionSchema = new Schema<IInteraction>(
   { timestamps: true }
 );
 
-const Interaction =
-  models?.Interaction || model<IInteraction>("Interaction", InteractionSchema);
+const Interaction: Model<IInteraction> =
+  (models.Interaction as Model<IInteraction>) ||
+  model<IInteraction>("Interaction", InteractionSchema);
 
 export default Interaction;
