@@ -32,3 +32,35 @@ interface GetQuestionResponse {
   createdAt: string;
   updatedAt: string;
 }
+
+interface AnswerResponse {
+  _id: string;
+  author: string;
+  question: string;
+  content: string;
+  upvotes: number;
+  downvotes: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface AnswerListItemResponse {
+  _id: string;
+  author: {
+    _id: string;
+    name: string;
+    image?: string | null;
+  };
+  question: string;
+  content: string;
+  upvotes: number;
+  downvotes: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface GetAnswersResponse {
+  answers: AnswerListItemResponse[];
+  isNext: boolean;
+  totalAnswers: number;
+}

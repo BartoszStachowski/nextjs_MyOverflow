@@ -12,7 +12,7 @@ import { answerServerSchema, getAnswersSchema } from "@/app/schemas/answer";
 
 export const createAnswer = async (
   params: z.infer<typeof answerServerSchema>
-): Promise<ActionResponse<IAnswerDoc>> => {
+): Promise<ActionResponse<AnswerResponse>> => {
   const validationResult = await action({
     params,
     schema: answerServerSchema,
@@ -23,35 +23,35 @@ export const createAnswer = async (
     return handleError(validationResult) as ErrorResponse;
   }
 
-  const { content, questionId } = params;
+  const { content, questionId } = validationResult.params!;
   const userId = validationResult?.session?.user?.id;
+
+  if (!userId) {
+    return handleError(new Error("Unauthorized")) as ErrorResponse;
+  }
 
   const session = await mongoose.startSession();
   session.startTransaction();
 
   try {
-    const question = await Question.findById(questionId);
-    if (!question) {
-      throw new Error("Question not found");
-    }
-
-    const [newAnswer] = await Answer.create(
-      [
-        {
-          content,
-          author: userId,
-          question: questionId,
-        },
-      ],
+    // const question = await Question.findById(questionId);
+    const questionUpdate = await Question.updateOne(
+      { _id: questionId },
+      { $inc: { answers: 1 } },
       { session }
     );
 
-    if (!newAnswer) {
-      throw new Error("Failed to create answer");
+    if (questionUpdate.matchedCount === 0) {
+      throw new Error("Question not found");
     }
 
-    question.answers += 1;
-    await question.save({ session });
+    const newAnswer = new Answer({
+      content,
+      author: userId,
+      question: questionId,
+    });
+
+    await newAnswer.save({ session });
 
     await session.commitTransaction();
 
@@ -71,13 +71,7 @@ export const createAnswer = async (
 
 export const getAnswers = async (
   params: z.infer<typeof getAnswersSchema>
-): Promise<
-  ActionResponse<{
-    answers: Answer[];
-    isNext: boolean;
-    totalAnswers: number;
-  }>
-> => {
+): Promise<ActionResponse<GetAnswersResponse>> => {
   const validationResult = await action({
     params,
     schema: getAnswersSchema,
@@ -87,35 +81,43 @@ export const getAnswers = async (
     return handleError(validationResult) as ErrorResponse;
   }
 
-  const { questionId, page = 1, pageSize = 10, filter } = params;
+  const {
+    questionId,
+    page = 1,
+    pageSize = 10,
+    filter,
+  } = validationResult.params!;
 
   const skip = (Number(page) - 1) * Number(pageSize);
   const limit = Number(pageSize);
 
-  let sortCriteria = {};
+  const filterQuery = {
+    question: questionId,
+  };
+
+  let sortCriteria: Record<string, 1 | -1> = {
+    createdAt: -1,
+  };
 
   switch (filter) {
-    case "latest":
-      sortCriteria = { createdAt: -1 };
-      break;
     case "oldest":
       sortCriteria = { createdAt: 1 };
       break;
     case "popular":
-      sortCriteria = { upvotes: -1 };
-      break;
-    default:
-      sortCriteria = { createdAt: -1 };
+      sortCriteria = { upvotes: -1, createdAt: -1 };
       break;
   }
   try {
-    const totalAnswers = await Answer.countDocuments({ question: questionId });
+    const [totalAnswers, answers] = await Promise.all([
+      Answer.countDocuments(filterQuery),
 
-    const answers = await Answer.find({ question: questionId })
-      .populate("author", "_id name image")
-      .sort(sortCriteria)
-      .skip(skip)
-      .limit(limit);
+      Answer.find(filterQuery)
+        .populate("author", "_id name image")
+        .sort(sortCriteria)
+        .skip(skip)
+        .limit(limit)
+        .lean(),
+    ]);
 
     const isNext = totalAnswers > skip + answers.length;
 
