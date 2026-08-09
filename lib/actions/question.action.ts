@@ -129,7 +129,7 @@ export const editQuestion = async (
   try {
     // Fetch the question and populate its tags to compare with the new tags
     const question = await Question.findById(questionId).populate<{
-      tags: ITagDoc;
+      tags: ITagDoc[];
     }>("tags");
 
     if (!question) {
@@ -179,7 +179,7 @@ export const editQuestion = async (
             question: questionId,
           });
 
-          question.tags.push(existingTag._id);
+          question.tags.push(existingTag);
         }
       }
     }
@@ -320,7 +320,7 @@ export const getQuestions = async (
     const totalQuestions = await Question.countDocuments(filterQuery);
     const questions = await Question.find(filterQuery)
       .populate<{
-        tags: ITagDoc;
+        tags: ITagDoc[];
       }>("tags", "name")
       .populate("author", "name image")
       .lean() // convert to plain object
