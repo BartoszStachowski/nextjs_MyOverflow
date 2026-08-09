@@ -101,16 +101,23 @@ export const createVote = async (
 
     if (existingVote) {
       if (existingVote.voteType === voteType) {
+        // User clicked the same vote again -> remove vote
         await Vote.deleteOne({ _id: existingVote._id }).session(session);
         await updateVoteCount(
           { targetId, targetType, voteType, change: -1 },
           session
         );
       } else {
+        // User changed vote, e.g. upvote -> downvote
         await Vote.findByIdAndUpdate(
           existingVote._id,
           { voteType },
-          { returnDocument: "after", session }
+          { session }
+        );
+
+        await updateVoteCount(
+          { targetId, targetType, voteType: existingVote.voteType, change: -1 },
+          session
         );
 
         await updateVoteCount(
@@ -119,7 +126,7 @@ export const createVote = async (
         );
       }
     } else {
-      // if the user has not voted yet
+      // User has not voted yet
       await Vote.create(
         [
           {
@@ -131,11 +138,12 @@ export const createVote = async (
         ],
         { session }
       );
+
+      await updateVoteCount(
+        { targetId, targetType, voteType, change: 1 },
+        session
+      );
     }
-    await updateVoteCount(
-      { targetId, targetType, voteType, change: 1 },
-      session
-    );
 
     await session.commitTransaction();
 
