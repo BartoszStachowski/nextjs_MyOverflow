@@ -20,96 +20,112 @@ import { paginatedSearchParamsSchema } from "@/app/schemas/general";
 
 export const createQuestion = async (
   params: z.infer<typeof askQuestionSchema>
-): Promise<ActionResponse<Question>> => {
-  // Validate the input parameters against the askQuestionSchema and check for user authorization
+): Promise<ActionResponse<QuestionResponse>> => {
   const validationResult = await action({
     params,
     schema: askQuestionSchema,
     authorize: true,
   });
 
-  // If validation fails, return a formatted error response
   if (validationResult instanceof Error) {
     return handleError(validationResult) as ErrorResponse;
   }
 
-  // Extract the validated data and user ID from the validation result
   const { title, content, tags } = validationResult.params!;
-  const userId = validationResult?.session?.user?.id;
+  const userId = validationResult.session?.user?.id;
 
-  // Start a MongoDB session and transaction to ensure atomicity
+  if (!userId) {
+    return handleError(new Error("Unauthorized")) as ErrorResponse;
+  }
+
+  const normalizedTags = [
+    ...new Map(
+      tags.map((tag) => [tag.trim().toLowerCase(), tag.trim()])
+    ).values(),
+  ];
+
   const session = await mongoose.startSession();
   session.startTransaction();
 
   try {
-    // Create the question record with title, content, and author
-    const [question] = await Question.create(
-      [{ title, content, author: userId }],
-      { session }
-    );
+    const question = new Question({
+      title,
+      content,
+      author: userId,
+    });
 
-    // If question creation fails, throw an error to trigger transaction rollback
-    if (!question) {
-      throw new Error("Failed to create question");
-    }
+    await question.save({ session });
 
     const tagIds: mongoose.Types.ObjectId[] = [];
-    const tagQuestionDocuments = [];
 
-    // Iterate through provided tags to find or create them
-    for (const tag of tags) {
+    const tagQuestionDocuments: {
+      tag: mongoose.Types.ObjectId;
+      question: mongoose.Types.ObjectId;
+    }[] = [];
+
+    // Find or create tags and increment their question count
+    for (const tag of normalizedTags) {
+      const escapedTag = tag.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
       const existingTag = await Tag.findOneAndUpdate(
-        // Search for tag by name (case-insensitive)
-        { name: { $regex: new RegExp(`^${tag}$`, "i") } },
-        // Set tag name if inserting, and increment the question count for the tag
-        // $setOnInsert - executes the update only if the document is new
-        { $setOnInsert: { name: tag }, $inc: { questions: 1 } },
-        // Upsert: true creates the tag if it doesn't exist; new: true returns the updated document
-        { upsert: true, new: true, session }
+        {
+          name: {
+            $regex: new RegExp(`^${escapedTag}$`, "i"),
+          },
+        },
+        {
+          $setOnInsert: { name: tag },
+          $inc: { questions: 1 },
+        },
+        {
+          upsert: true,
+          returnDocument: "after",
+          session,
+        }
       );
 
+      if (!existingTag) {
+        throw new Error(`Failed to create or update tag: ${tag}`);
+      }
+
       tagIds.push(existingTag._id);
-      // Prepare the documents for the TagQuestion junction model
+
       tagQuestionDocuments.push({
         tag: existingTag._id,
         question: question._id,
       });
     }
 
-    // Bulk insert the relationship records between the question and its tags
-    await TagQuestion.insertMany(tagQuestionDocuments, { session });
+    // Create question-tag relations
+    if (tagQuestionDocuments.length > 0) {
+      await TagQuestion.insertMany(tagQuestionDocuments, {
+        session,
+      });
+    }
 
-    // Update the question document to include the IDs of the associated tags
-    // {title: xxx, tags: []} => { title: 'xxx', tags: [tag1Id, tag2Id] }
-    await Question.findByIdAndUpdate(
-      question._id,
-      {
-        $push: { tags: { $each: tagIds } },
-      },
-      { session }
-    );
+    // Add tags directly to the question document
+    question.tags = tagIds;
 
-    // Commit all changes performed within the transaction
+    await question.save({ session });
+
     await session.commitTransaction();
 
-    // Return a success response with the newly created question data
     return {
       success: true,
       data: JSON.parse(JSON.stringify(question)),
     };
   } catch (error) {
-    // Rollback all changes if any error occurs during the transaction
     await session.abortTransaction();
+
     return handleError(error) as ErrorResponse;
   } finally {
-    // End the session regardless of the outcome
     await session.endSession();
   }
 };
 
 export const editQuestion = async (
   params: z.infer<typeof editQuestionSchema>
-): Promise<ActionResponse<IQuestionDoc>> => {
+): Promise<ActionResponse<QuestionResponse>> => {
   const validationResult = await action({
     params,
     schema: editQuestionSchema,
@@ -121,16 +137,17 @@ export const editQuestion = async (
   }
 
   const { title, content, tags, questionId } = validationResult.params!;
-  const userId = validationResult?.session?.user?.id;
+  const userId = validationResult.session?.user?.id;
+
+  if (!userId) {
+    return handleError(new Error("Unauthorized")) as ErrorResponse;
+  }
 
   const session = await mongoose.startSession();
   session.startTransaction();
 
   try {
-    // Fetch the question and populate its tags to compare with the new tags
-    const question = await Question.findById(questionId).populate<{
-      tags: ITagDoc[];
-    }>("tags");
+    const question = await Question.findById(questionId).session(session);
 
     if (!question) {
       throw new Error("Question not found");
@@ -140,53 +157,70 @@ export const editQuestion = async (
       throw new Error("Unauthorized");
     }
 
-    // Update the question's title and content if they have changed
-    if (question.title !== title || question.content !== content) {
-      question.title = title;
-      question.content = content;
-      await question.save({ session });
-    }
+    // 1. trim and lowercase all tags
+    // 2. create a set of unique tags by removing duplicates
+    // 3. values - get the array of unique tags
+    // return ['value_1', 'value_2' ....]
+    const normalizedTags = [
+      ...new Map(
+        tags.map((tag) => [tag.trim().toLowerCase(), tag.trim()])
+      ).values(),
+    ];
 
-    // Identify tags that are new and need to be added
-    const tagsToAdd = tags.filter(
-      (tag) =>
-        !question.tags.some(
-          (t: ITagDoc) => t.name.toLowerCase() === tag.toLowerCase()
-        )
+    // find all tags by id in question
+    // [ObjectId('1')] => [{_id: 'ObjectId("1")', name: 'tag_1'}] '}]
+    const currentTags = await Tag.find({
+      _id: { $in: question.tags },
+    }).session(session);
+
+    // set allow using currentTagNames.has('react')
+    // return Set { "react", "javascript" }
+    const currentTagNames = new Set(
+      currentTags.map((tag) => tag.name.toLowerCase())
     );
 
-    // Identify tags that have been removed and need to be cleaned up
-    const tagsToRemove = question.tags.filter(
-      (tag: ITagDoc) =>
-        !tags.some((t) => t.toLowerCase() === tag.name.toLowerCase())
+    const incomingTagNames = new Set(
+      normalizedTags.map((tag) => tag.toLowerCase())
     );
 
-    const newTagDocuments = [];
+    const tagsToAdd = normalizedTags.filter(
+      (tag) => !currentTagNames.has(tag.toLowerCase())
+    );
+
+    const tagsToRemove = currentTags.filter(
+      (tag) => !incomingTagNames.has(tag.name.toLowerCase())
+    );
+
+    const newTagDocuments: {
+      tag: mongoose.Types.ObjectId;
+      question: mongoose.Types.ObjectId;
+    }[] = [];
 
     // Process new tags: upsert them and update their question count
-    if (tagsToAdd.length > 0) {
-      for (const tag of tagsToAdd) {
-        const existingTag = await Tag.findOneAndUpdate(
-          { name: { $regex: new RegExp(`^${tag}$`, "i") } },
-          { $setOnInsert: { name: tag }, $inc: { questions: 1 } },
-          { upsert: true, new: true, session }
-        );
+    for (const tag of tagsToAdd) {
+      const escapedTag = tag.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
-        // relationship between question and tag
-        if (existingTag) {
-          newTagDocuments.push({
-            tag: existingTag._id,
-            question: questionId,
-          });
+      const existingTag = await Tag.findOneAndUpdate(
+        { name: { $regex: new RegExp(`^${escapedTag}$`, "i") } },
+        { $setOnInsert: { name: tag }, $inc: { questions: 1 } },
+        { upsert: true, returnDocument: "after", session }
+      );
 
-          question.tags.push(existingTag);
-        }
+      if (!existingTag) {
+        throw new Error(`Failed to create or update tag: ${tag}`);
       }
+
+      question.tags.push(existingTag._id);
+
+      newTagDocuments.push({
+        tag: existingTag._id,
+        question: question._id,
+      });
     }
 
     // Process removed tags: decrement their question count and remove associations
     if (tagsToRemove.length > 0) {
-      const tagIdsToRemove = tagsToRemove.map((tag: ITagDoc) => tag._id);
+      const tagIdsToRemove = tagsToRemove.map((tag) => tag._id);
 
       // Decrement the question count for each removed tag
       await Tag.updateMany(
@@ -197,23 +231,27 @@ export const editQuestion = async (
 
       // Remove the associations between the question and the removed tags
       await TagQuestion.deleteMany(
-        { tag: { $in: tagIdsToRemove }, question: questionId },
+        { tag: { $in: tagIdsToRemove }, question: question._id },
         { session }
       );
 
       // Filter out the removed tags from the question's tag list
+      // equals because we compare objects
       question.tags = question.tags.filter(
-        (tag: ITagDoc) =>
-          !tagIdsToRemove.some((id: mongoose.Types.ObjectId) =>
-            id.equals(tag._id)
-          )
+        (tagId) => !tagIdsToRemove.some((id) => id.equals(tagId))
       );
     }
 
-    // Insert new question-tag associations
+    // Create new question-tag relations
     if (newTagDocuments.length > 0) {
-      await TagQuestion.insertMany(newTagDocuments, { session });
+      await TagQuestion.insertMany(newTagDocuments, {
+        session,
+      });
     }
+
+    // Update question
+    question.title = title;
+    question.content = content;
 
     // Save the updated question and commit the transaction
     await question.save({ session });
@@ -226,6 +264,7 @@ export const editQuestion = async (
   } catch (error) {
     // Rollback all changes if any error occurs during the transaction
     await session.abortTransaction();
+
     return handleError(error) as ErrorResponse;
   } finally {
     // End the session regardless of the outcome
@@ -235,25 +274,23 @@ export const editQuestion = async (
 
 export const getQuestion = async (
   params: z.infer<typeof getQuestionSchema>
-): Promise<ActionResponse<Question>> => {
-  // Validate the input parameters against the askQuestionSchema and check for user authorization
+): Promise<ActionResponse<GetQuestionResponse>> => {
   const validationResult = await action({
     params,
     schema: getQuestionSchema,
   });
 
-  // If validation fails, return a formatted error response
   if (validationResult instanceof Error) {
     return handleError(validationResult) as ErrorResponse;
   }
 
-  // Extract the validated data and user ID from the validation result
   const { questionId } = validationResult.params!;
 
   try {
     const question = await Question.findById(questionId)
-      .populate("tags")
-      .populate("author", "_id name image");
+      .populate("tags", "_id name")
+      .populate("author", "_id name image")
+      .lean();
 
     if (!question) {
       throw new Error("Question not found");
@@ -270,7 +307,9 @@ export const getQuestion = async (
 
 export const getQuestions = async (
   params: z.infer<typeof paginatedSearchParamsSchema>
-): Promise<ActionResponse<{ questions: Question[]; isNext: boolean }>> => {
+): Promise<
+  ActionResponse<{ questions: GetQuestionResponse[]; isNext: boolean }>
+> => {
   const validationResult = await action({
     params,
     schema: paginatedSearchParamsSchema,
@@ -280,7 +319,7 @@ export const getQuestions = async (
     return handleError(validationResult) as ErrorResponse;
   }
 
-  const { page = 1, pageSize = 10, query, filter } = params;
+  const { page = 1, pageSize = 10, query, filter } = validationResult.params!;
   const skip = (Number(page) - 1) * Number(pageSize);
   const limit = Number(pageSize);
 
@@ -292,41 +331,49 @@ export const getQuestions = async (
   }
 
   if (query) {
+    const escapedQuery = query.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
     filterQuery.$or = [
-      { title: { $regex: new RegExp(query, "i") } },
-      { content: { $regex: new RegExp(query, "i") } },
+      {
+        title: {
+          $regex: new RegExp(escapedQuery, "i"),
+        },
+      },
+      {
+        content: {
+          $regex: new RegExp(escapedQuery, "i"),
+        },
+      },
     ];
   }
 
-  let sortCriteria = {};
+  let sortCriteria: Record<string, 1 | -1> = {
+    createdAt: -1,
+  };
 
   switch (filter) {
-    case "newest":
-      sortCriteria = { createdAt: -1 };
-      break;
     case "unanswered":
       filterQuery.answers = 0;
       sortCriteria = { createdAt: -1 };
       break;
+
     case "popular":
       sortCriteria = { upvotes: -1 };
-      break;
-    default:
-      sortCriteria = { createdAt: -1 };
       break;
   }
 
   try {
-    const totalQuestions = await Question.countDocuments(filterQuery);
-    const questions = await Question.find(filterQuery)
-      .populate<{
-        tags: ITagDoc[];
-      }>("tags", "name")
-      .populate("author", "name image")
-      .lean() // convert to plain object
-      .sort(sortCriteria)
-      .skip(skip)
-      .limit(limit);
+    const [totalQuestions, questions] = await Promise.all([
+      Question.countDocuments(filterQuery),
+
+      Question.find(filterQuery)
+        .populate("tags", "_id name")
+        .populate("author", "_id name image")
+        .sort(sortCriteria)
+        .skip(skip)
+        .limit(limit)
+        .lean(),
+    ]);
 
     const isNext = totalQuestions > skip + questions.length;
 
@@ -351,22 +398,28 @@ export const incrementViews = async (
     return handleError(validationResult) as ErrorResponse;
   }
 
-  const { questionId } = params;
+  const { questionId } = validationResult.params!;
 
   try {
-    const question = await Question.findById(questionId);
+    const question = await Question.findByIdAndUpdate(
+      questionId,
+      {
+        $inc: { views: 1 },
+      },
+      {
+        returnDocument: "after",
+      }
+    ).select("views");
 
     if (!question) {
       throw new Error("Question not found");
     }
 
-    question.views += 1;
-
-    await question.save();
-
     return {
       success: true,
-      data: { views: question.views },
+      data: {
+        views: question.views,
+      },
     };
   } catch (error) {
     return handleError(error) as ErrorResponse;
