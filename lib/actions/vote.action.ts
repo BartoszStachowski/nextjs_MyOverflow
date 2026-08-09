@@ -10,6 +10,8 @@ import action from "@/lib/handlers/action";
 import handleError from "@/lib/handlers/error";
 import mongoose, { ClientSession } from "mongoose";
 import { Answer, Question, Vote } from "@/database";
+import { revalidatePath } from "next/cache";
+import ROUTES from "@/constants/routes";
 
 export const updateVoteCount = async (
   params: z.infer<typeof updateVoteCountSchema>,
@@ -130,7 +132,14 @@ export const createVote = async (
         { session }
       );
     }
+    await updateVoteCount(
+      { targetId, targetType, voteType, change: 1 },
+      session
+    );
+
     await session.commitTransaction();
+
+    revalidatePath(ROUTES.QUESTION(targetId));
 
     return {
       success: true,

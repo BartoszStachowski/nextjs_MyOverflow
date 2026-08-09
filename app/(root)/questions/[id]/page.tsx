@@ -13,11 +13,14 @@ import Preview from "@/components/web/editor/Preview";
 import Metric from "@/components/web/base/Metric";
 import UserAvatar from "@/components/web/base/UserAvatar";
 import Votes from "@/components/web/votes/Votes";
+import { hasVoted } from "@/lib/actions/vote.action";
+import { Suspense } from "react";
 
 const QuestionDetails = async ({ params }: RouteParams) => {
   const { id } = await params;
   const { success, data: question } = await getQuestion({ questionId: id });
 
+  // run code "after" after the response is received
   after(async () => {
     await incrementViews({ questionId: id });
   });
@@ -33,6 +36,11 @@ const QuestionDetails = async ({ params }: RouteParams) => {
     page: 1,
     pageSize: 10,
     filter: "latest",
+  });
+
+  const hasVotedPromise = hasVoted({
+    targetId: question._id,
+    targetType: "question",
   });
 
   const { author, createdAt, answers, views, tags, content, title } = question;
@@ -57,12 +65,15 @@ const QuestionDetails = async ({ params }: RouteParams) => {
           </div>
 
           <div className="flex justify-end">
-            <Votes
-              upvotes={question.upvotes}
-              downvotes={question.downvotes}
-              hasUpVoted={true}
-              hasDownVoted={false}
-            />
+            <Suspense fallback={<div>Loading...</div>}>
+              <Votes
+                upvotes={question.upvotes}
+                downvotes={question.downvotes}
+                targetType="question"
+                targetId={question._id}
+                hasVotedPromise={hasVotedPromise}
+              />
+            </Suspense>
           </div>
         </div>
 
