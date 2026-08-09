@@ -1,73 +1,14 @@
 "use server";
 
 import { z } from "zod";
-import {
-  createVoteSchema,
-  hasVotedSchema,
-  updateVoteCountSchema,
-} from "@/app/schemas/vote";
+import { createVoteSchema, hasVotedSchema } from "@/app/schemas/vote";
 import action from "@/lib/handlers/action";
 import handleError from "@/lib/handlers/error";
-import mongoose, { ClientSession } from "mongoose";
-import { Answer, Question, Vote } from "@/database";
+import mongoose from "mongoose";
+import { Vote } from "@/database";
 import { revalidatePath } from "next/cache";
 import ROUTES from "@/constants/routes";
-
-export const updateVoteCount = async (
-  params: z.infer<typeof updateVoteCountSchema>,
-  session?: ClientSession
-): Promise<ActionResponse> => {
-  const validationResult = await action({
-    params,
-    schema: updateVoteCountSchema,
-    // authorize: true,
-  });
-
-  if (validationResult instanceof Error) {
-    return handleError(validationResult) as ErrorResponse;
-  }
-
-  const { targetId, targetType, voteType, change } = validationResult.params!;
-
-  const Model = targetType === "question" ? Question : Answer;
-  const voteField = voteType === "upvote" ? "upvotes" : "downvotes";
-  try {
-    // const result = await Model.findByIdAndUpdate(
-    //   targetId,
-    //   {
-    //     $inc: { [voteField]: change },
-    //   },
-    //   { returnDocument: "after", session }
-    // );
-
-    const result =
-      targetType === "question"
-        ? await Question.findByIdAndUpdate(
-            targetId,
-            {
-              $inc: { [voteField]: change },
-            },
-            { returnDocument: "after", session }
-          )
-        : await Answer.findByIdAndUpdate(
-            targetId,
-            {
-              $inc: { [voteField]: change },
-            },
-            { returnDocument: "after", session }
-          );
-
-    if (!result) {
-      return handleError(
-        new Error("Failed to update vote count")
-      ) as ErrorResponse;
-    }
-
-    return { success: true, data: JSON.parse(JSON.stringify(result)) };
-  } catch (error) {
-    return handleError(error) as ErrorResponse;
-  }
-};
+import { updateVoteCount } from "@/lib/services/vote.service";
 
 export const createVote = async (
   params: z.infer<typeof createVoteSchema>
@@ -181,7 +122,9 @@ export const hasVoted = async (
       author: userId,
       actionId: targetId,
       actionType: targetType,
-    });
+    })
+      .select("voteType")
+      .lean();
 
     if (!vote) {
       return {

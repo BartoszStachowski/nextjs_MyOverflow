@@ -26,6 +26,17 @@ const VoteSchema = new Schema<IVote>(
   { timestamps: true }
 );
 
+VoteSchema.index(
+  {
+    author: 1,
+    actionId: 1,
+    actionType: 1,
+  },
+  {
+    unique: true,
+  }
+);
+
 const Vote: Model<IVote> =
   (models.Vote as Model<IVote>) || model<IVote>("Vote", VoteSchema);
 
