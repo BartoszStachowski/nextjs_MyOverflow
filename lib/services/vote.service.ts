@@ -29,6 +29,6 @@ export const updateVoteCount = async (
         );
 
   if (result.matchedCount === 0) {
-    throw new Error("Failed to update vote count");
+    throw new Error("Vote target not found");
   }
 };

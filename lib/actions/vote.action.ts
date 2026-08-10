@@ -31,62 +31,61 @@ export const createVote = async (
   }
 
   const session = await mongoose.startSession();
-  session.startTransaction();
 
   try {
-    const existingVote = await Vote.findOne({
-      author: userId,
-      actionId: targetId,
-      actionType: targetType,
-    }).session(session);
+    await session.withTransaction(async () => {
+      const existingVote = await Vote.findOne({
+        author: userId,
+        actionId: targetId,
+        actionType: targetType,
+      }).session(session);
 
-    if (existingVote) {
-      if (existingVote.voteType === voteType) {
-        // User clicked the same vote again -> remove vote
-        await Vote.deleteOne({ _id: existingVote._id }).session(session);
-        await updateVoteCount(
-          { targetId, targetType, voteType, change: -1 },
-          session
-        );
-      } else {
-        // User changed vote, e.g. upvote -> downvote
-        await Vote.findByIdAndUpdate(
-          existingVote._id,
-          { voteType },
-          { session }
-        );
+      if (!existingVote) {
+        const vote = new Vote({
+          author: userId,
+          actionId: targetId,
+          actionType: targetType,
+          voteType,
+        });
 
-        await updateVoteCount(
-          { targetId, targetType, voteType: existingVote.voteType, change: -1 },
-          session
-        );
+        await vote.save({ session });
 
         await updateVoteCount(
           { targetId, targetType, voteType, change: 1 },
           session
         );
+
+        return;
       }
-    } else {
-      // User has not voted yet
-      await Vote.create(
-        [
-          {
-            author: userId,
-            actionId: targetId,
-            actionType: targetType,
-            voteType,
-          },
-        ],
-        { session }
+
+      if (existingVote.voteType === voteType) {
+        // User clicked the same vote again -> remove vote
+        await Vote.deleteOne({ _id: existingVote._id }, { session });
+        await updateVoteCount(
+          { targetId, targetType, voteType, change: -1 },
+          session
+        );
+
+        return;
+      }
+
+      // User changed vote, e.g. upvote -> downvote
+      const previousVoteType = existingVote.voteType;
+
+      existingVote.voteType = voteType;
+
+      await existingVote.save({ session });
+
+      await updateVoteCount(
+        { targetId, targetType, voteType: previousVoteType, change: -1 },
+        session
       );
 
       await updateVoteCount(
         { targetId, targetType, voteType, change: 1 },
         session
       );
-    }
-
-    await session.commitTransaction();
+    });
 
     revalidatePath(ROUTES.QUESTION(targetId));
 
@@ -94,7 +93,6 @@ export const createVote = async (
       success: true,
     };
   } catch (error) {
-    await session.abortTransaction();
     return handleError(error) as ErrorResponse;
   } finally {
     await session.endSession();
@@ -126,18 +124,11 @@ export const hasVoted = async (
       .select("voteType")
       .lean();
 
-    if (!vote) {
-      return {
-        success: true,
-        data: { hasUpvoted: false, hasDownvoted: false },
-      };
-    }
-
     return {
       success: true,
       data: {
-        hasUpvoted: vote.voteType === "upvote",
-        hasDownvoted: vote.voteType === "downvote",
+        hasUpvoted: vote?.voteType === "upvote",
+        hasDownvoted: vote?.voteType === "downvote",
       },
     };
   } catch (error) {
