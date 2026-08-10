@@ -6,7 +6,7 @@ interface Tag {
 interface Author {
   _id: string;
   name: string;
-  image: string;
+  image?: string | null;
 }
 
 interface Question {
@@ -19,7 +19,7 @@ interface Question {
   downvotes: number;
   answers: number;
   views: number;
-  createdAt: Date;
+  createdAt: Date | string;
 }
 
 type ActionResponse<T = null> = {
@@ -58,7 +58,9 @@ interface Answer {
   _id: string;
   author: Author;
   content: string;
-  createdAt: Date;
+  upvotes: number;
+  downvotes: number;
+  createdAt: Date | string;
 }
 
 interface HasVotedResponse {

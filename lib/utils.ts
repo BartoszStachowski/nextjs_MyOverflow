@@ -14,7 +14,7 @@ export const getDeviconClassName = (techName: string) => {
     : "devicon-devicon-plain";
 };
 
-export const getTimeStamp = (createdAt: Date) => {
+export const getTimeStamp = (createdAt: Date | string) => {
   const date = new Date(createdAt);
   const now = new Date();
   const secondsAgo = Math.floor((now.getTime() - date.getTime()) / 1000);

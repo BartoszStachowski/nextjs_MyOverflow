@@ -15,6 +15,7 @@ import UserAvatar from "@/components/web/base/UserAvatar";
 import Votes from "@/components/web/votes/Votes";
 import { hasVoted } from "@/lib/actions/vote.action";
 import { Suspense } from "react";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const QuestionDetails = async ({ params }: RouteParams) => {
   const { id } = await params;
@@ -65,7 +66,13 @@ const QuestionDetails = async ({ params }: RouteParams) => {
           </div>
 
           <div className="flex justify-end">
-            <Suspense fallback={<div>Loading...</div>}>
+            <Suspense
+              fallback={
+                <div>
+                  <Skeleton className="h-6 w-24" />
+                </div>
+              }
+            >
               <Votes
                 upvotes={question.upvotes}
                 downvotes={question.downvotes}
@@ -86,7 +93,7 @@ const QuestionDetails = async ({ params }: RouteParams) => {
         <Metric
           imgUrl="/icons/clock.svg"
           alt="clock icon"
-          value={`asked ${getTimeStamp(new Date(createdAt))}`}
+          value={`asked ${getTimeStamp(createdAt)}`}
           title=""
           textStyles="small-regular text-dark400_light700"
           titleStyles="max-sm:hidden"
