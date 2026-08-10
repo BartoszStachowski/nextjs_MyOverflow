@@ -64,3 +64,20 @@ interface GetAnswersResponse {
   isNext: boolean;
   totalAnswers: number;
 }
+
+interface TagResponse {
+  _id: string;
+  name: string;
+  questions: number;
+}
+
+type QuestionListItemResponse = Omit<
+  GetQuestionResponse,
+  "content" | "updatedAt"
+>;
+
+interface GetTagQuestionsResponse {
+  tag: TagResponse;
+  questions: QuestionListItemResponse[];
+  isNext: boolean;
+}
