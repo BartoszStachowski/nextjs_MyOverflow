@@ -25,7 +25,6 @@ export const toggleSaveQuestion = async (
   const userId = validationResult.session?.user.id;
 
   try {
-    // const question = await Question.findById(questionId);
     const questionExists = await Question.exists({ _id: questionId });
 
     if (!questionExists) {
