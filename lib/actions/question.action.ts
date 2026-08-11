@@ -13,8 +13,8 @@ import action from "@/lib/handlers/action";
 import handleError from "@/lib/handlers/error";
 
 // models
-import Question, { IQuestionDoc } from "@/database/question.model";
-import Tag, { ITagDoc } from "@/database/tag.model";
+import Question from "@/database/question.model";
+import Tag from "@/database/tag.model";
 import TagQuestion from "@/database/tag-question.model";
 import { paginatedSearchParamsSchema } from "@/app/schemas/general";
 
