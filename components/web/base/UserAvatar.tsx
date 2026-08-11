@@ -26,7 +26,7 @@ const UserAvatar = ({
     .slice(0, 2);
   return (
     <Link href={ROUTES.PROFILE(userId)}>
-      <Avatar className={className}>
+      <Avatar className={cn("relative", className)}>
         {imageUrl ? (
           <AvatarImage src={imageUrl} alt={name} className="object-cover" />
         ) : (
