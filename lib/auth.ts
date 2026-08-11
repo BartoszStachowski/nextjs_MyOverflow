@@ -27,21 +27,23 @@ export const auth = betterAuth({
   databaseHooks: {
     user: {
       create: {
-        after: async (user) => {
+        before: async (user) => {
+          if (user.username) {
+            return { data: user };
+          }
+
           const fallbackUsername = slugify(user.email.split("@")[0], {
             lower: true,
             strict: true,
             trim: true,
           });
 
-          await db.collection("profiles").insertOne({
-            userId: user.id,
-            username:
-              user.username ?? `${fallbackUsername}-${user.id.slice(0, 6)}`,
-            name: user.name,
-            image: user.image,
-            createdAt: new Date(),
-          });
+          return {
+            data: {
+              ...user,
+              username: `${fallbackUsername}-${crypto.randomUUID().slice(0, 6)}`,
+            },
+          };
         },
       },
     },

@@ -18,8 +18,6 @@ const CommunityPage = async ({ searchParams }: RouteParams) => {
 
   const { users } = data || {};
 
-  console.log("MY DATA", data);
-
   return (
     <div>
       <h1 className="h1-bold text-dark100_light900">All users</h1>
