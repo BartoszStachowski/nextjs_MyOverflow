@@ -1,16 +1,17 @@
 "use client";
 
 import { authClient } from "@/lib/auth-client";
-import { useState, useTransition } from "react";
+import { use, useState, useTransition } from "react";
 import Image from "next/image";
 import { toast } from "sonner";
 import { toggleSaveQuestion } from "@/lib/actions/collection.action";
 
 interface Props {
   questionId: string;
+  hasSavedQuestionPromise: Promise<ActionResponse<{ saved: boolean }>>;
 }
 
-const SaveQuestion = ({ questionId }: Props) => {
+const SaveQuestion = ({ questionId, hasSavedQuestionPromise }: Props) => {
   const [isPending, startTransition] = useTransition();
 
   const {
@@ -21,9 +22,10 @@ const SaveQuestion = ({ questionId }: Props) => {
 
   const userId = session?.user?.id;
 
-  const [isLoading, setIsLoading] = useState(false);
+  const { data } = use(hasSavedQuestionPromise);
+  const { saved: hasSaved } = data || {};
 
-  const hasSaved = false;
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleSave = () => {
     if (isPending) return;

@@ -17,6 +17,7 @@ import { hasVoted } from "@/lib/actions/vote.action";
 import { Suspense } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import SaveQuestion from "@/components/web/questions/SaveQuestion";
+import { hasSaveQuestion } from "@/lib/actions/collection.action";
 
 const QuestionDetails = async ({ params }: RouteParams) => {
   const { id } = await params;
@@ -45,6 +46,10 @@ const QuestionDetails = async ({ params }: RouteParams) => {
     targetType: "question",
   });
 
+  const hasSavedQuestionPromise = hasSaveQuestion({
+    questionId: question._id,
+  });
+
   const { author, createdAt, answers, views, tags, content, title } = question;
 
   return (
@@ -66,7 +71,7 @@ const QuestionDetails = async ({ params }: RouteParams) => {
             </Link>
           </div>
 
-          <div className="flex justify-end">
+          <div className="flex items-center justify-end gap-2.5">
             <Suspense
               fallback={
                 <div>
@@ -84,7 +89,10 @@ const QuestionDetails = async ({ params }: RouteParams) => {
             </Suspense>
 
             <Suspense fallback={<div>Loading...</div>}>
-              <SaveQuestion questionId={question._id} />
+              <SaveQuestion
+                questionId={question._id}
+                hasSavedQuestionPromise={hasSavedQuestionPromise}
+              />
             </Suspense>
           </div>
         </div>

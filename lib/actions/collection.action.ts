@@ -62,3 +62,34 @@ export const toggleSaveQuestion = async (
     return handleError(error) as ErrorResponse;
   }
 };
+
+export const hasSaveQuestion = async (
+  params: z.infer<typeof collectionBaseSchema>
+): Promise<ActionResponse<{ saved: boolean }>> => {
+  const validationResult = await action({
+    params,
+    schema: collectionBaseSchema,
+    authorize: true,
+  });
+
+  if (validationResult instanceof Error) {
+    return handleError(validationResult) as ErrorResponse;
+  }
+
+  const { questionId } = validationResult.params!;
+  const userId = validationResult.session?.user.id;
+
+  try {
+    const collection = await Collection.findOne({
+      question: questionId,
+      author: userId,
+    });
+
+    return {
+      success: true,
+      data: { saved: !!collection },
+    };
+  } catch (error) {
+    return handleError(error) as ErrorResponse;
+  }
+};
