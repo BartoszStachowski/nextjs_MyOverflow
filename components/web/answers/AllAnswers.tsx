@@ -1,6 +1,8 @@
 import DataRenderer from "@/components/web/base/DataRenderer";
 import { EMPTY_ANSWERS } from "@/constants/states";
 import AnswerCard from "@/components/web/cards/AnswerCard";
+import { AnswerFilters } from "@/constants/filters";
+import CommonFilter from "@/components/web/filters/CommonFilter";
 
 interface Props extends ActionResponse<Answer[]> {
   totalAnswers: number;
@@ -13,7 +15,11 @@ const AllAnswers = ({ data, success, error, totalAnswers }: Props) => {
         <h3 className="primary-text-gradient">
           {totalAnswers} {totalAnswers === 1 ? "Answer" : "Answers"}
         </h3>
-        <p>Filters</p>
+        <CommonFilter
+          filters={AnswerFilters}
+          otherClasses="sm:min-w-32"
+          containerClasses="max-xs:w-full"
+        />
       </div>
 
       <DataRenderer

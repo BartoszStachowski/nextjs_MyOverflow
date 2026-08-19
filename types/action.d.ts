@@ -71,13 +71,8 @@ interface TagResponse {
   questions: number;
 }
 
-type QuestionListItemResponse = Omit<
-  GetQuestionResponse,
-  "content" | "updatedAt"
->;
-
 interface GetTagQuestionsResponse {
   tag: TagResponse;
-  questions: QuestionListItemResponse[];
+  questions: GetQuestionResponse[];
   isNext: boolean;
 }
