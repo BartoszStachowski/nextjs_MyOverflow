@@ -8,6 +8,7 @@ import QuestionCard from "@/components/web/cards/QuestionCard";
 import React from "react";
 import CommonFilter from "@/components/web/filters/CommonFilter";
 import { HomePageFilters } from "@/constants/filters";
+import Pagination from "@/components/web/base/Pagination";
 
 const Page = async ({ params, searchParams }: RouteParams) => {
   const { id } = await params;
@@ -20,7 +21,7 @@ const Page = async ({ params, searchParams }: RouteParams) => {
     query,
   });
 
-  const { tag, questions } = data || {};
+  const { tag, questions, isNext } = data || {};
 
   return (
     <>
@@ -56,6 +57,8 @@ const Page = async ({ params, searchParams }: RouteParams) => {
           </div>
         )}
       />
+
+      <Pagination isNext={isNext || false} page={page} />
     </>
   );
 };
